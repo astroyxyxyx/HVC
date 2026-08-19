@@ -67,7 +67,7 @@ from radio_beam import Beam
 SNR_LIST = [1.5, 2, 2.5, 3]
 MERGE_LIST = [0.7, 1]
 
-FITS_FILE = "./baseline/CRAFTS_-4.7_-350_-150_baseline.fits"
+FITS_FILE = "./data/processed/CRAFTS_cutout_baseline_K.fits"
 
 # Velocity interval used to define the RMS/noise channels.
 # The default keeps the original logic: channels OUTSIDE [-310, -195] km/s
