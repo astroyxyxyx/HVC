@@ -1,0 +1,45 @@
+input.data =./cut/new_baseline/HI4PI_360-350_-100-170_Jy.fits
+#input.data =./cut/new_baseline/CRAFTS_360-350_-100-170_blsub_order1_clean.fits
+#input.data =./cut/new_baseline/CRAFTS_360-350_-150-350_blsub_order1_clean_Jy.fits
+#scaleNoise.mode  = local
+#scaleNoise.enable 4= true
+# Source finding module
+scfind.enable = true
+scfind.kernelsXY = 0,1,2,3,4,5
+scfind.kernelsZ = 0,1,2,3,4,5
+scfind.threshold = 3
+scfind.statistic = std
+#scfind.fluxRange = full
+
+
+
+# Linking module
+linker.radiusXY = 1
+linker.radiusZ = 1
+linker.minSizeXY = 10
+linker.minSizeZ = 10
+#link.keepNegative = true
+
+# Reliability calculation module
+reliability.enable = false
+reliability.threshold = 0.9
+reliability.minSNR = 3.0
+reliability.autoKernel = true
+reliability.plot = true
+reliability.scaleKernel =0.5
+
+# output
+output.directory = ./cut/new_baseline/HI4PI_4.5
+output.writeMask = true
+output.writeFiltered = true
+output.writeNoise = true
+output.writeCatXML = true
+output.writeCatASCII = true
+output.overwrite = true
+output.writeMoments = true
+output.writeCubelets = true
+output.writeRawMask  = true
+
+parameter.enable = true
+parameter.wcs = true
+parameter.physical=true
