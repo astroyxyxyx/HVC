@@ -10,20 +10,20 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import FuncFormatter, MaxNLocator, FixedLocator
 # =========================================================
-# 全局字体：Times New Roman
+# Global font: Times New Roman
 # =========================================================
 mpl.rcParams["font.family"] = "Times New Roman"
 mpl.rcParams["mathtext.fontset"] = "stix"
 mpl.rcParams["axes.unicode_minus"] = False
 
 # =========================================================
-# 统一图像尺寸（保证每张 PDF 外框完全一致）
+# Use a shared figure size so every PDF frame is identical.
 # =========================================================
 FIG_W = 13
 FIG_H = 9
 
 # =========================================================
-# 全局字号（在你原来基础上整体 +4）
+# Global font size, increased by 4 points from the original settings.
 # =========================================================
 FONTSIZE_TITLE = 20
 FONTSIZE_SUPTITLE = 20
@@ -34,22 +34,23 @@ FONTSIZE_CBAR = 18
 FONTSIZE_CBAR_TICK = 16
 
 # =========================================================
-# 0. 参数设置
+# 0. Parameter settings
 # =========================================================
 fitsname = "./baseline/CRAFTS_-4.7_-350_-150_baseline.fits"
 
 SNR_LIST = ["2"]
-SOURCE_IDS = list(range(1, 18))   # 顺着原始编号处理 source_001 到 source_017  # 跳过 source_006，source_007变成source_006，以此类推
+# Process source_001 through source_017 without renumbering.
+SOURCE_IDS = list(range(1, 18))
 
 BASE_INPUT = "./baseline"
 BASE_OUT = "./baseline/source_summary_figures_2x2_fixedsize"
 
-ZOOM_PAD_PIX = 5   # zoom-in 时在源外扩的像素数
+ZOOM_PAD_PIX = 5   # Number of pixels to pad around each source in the zoom-in view.
 
 os.makedirs(BASE_OUT, exist_ok=True)
 
 # =========================================================
-# 1. 工具函数：读取单个源 CSV
+# 1. Helper function: read one source CSV file.
 # =========================================================
 def load_source_csv(csv_file):
     if not os.path.exists(csv_file):
@@ -91,7 +92,7 @@ def load_source_csv(csv_file):
 
 
 # =========================================================
-# 2. 坐标 / WCS 工具函数
+# 2. Coordinate and WCS helper functions
 # =========================================================
 def unwrap_ra_deg(ra_deg):
     ra_rad = np.deg2rad(ra_deg)
@@ -127,7 +128,7 @@ def ra_hour_formatter_from_deg(x, pos):
 
 def ra_deg_formatter(x, pos):
     """Top RA axis: 365° format with two decimals."""
-    # 将RA度数转换到0-360度范围
+    # Convert RA in degrees to the 0-360 degree range.
     # ra_deg = x % 360.0
     return rf"{x:.2f}°"
 
@@ -173,14 +174,14 @@ def apply_sky_axes(ax, extent, show_ylabel=True):
     top_ax.xaxis.set_major_formatter(FuncFormatter(ra_deg_formatter))
     top_ax.xaxis.set_major_locator(MaxNLocator(nbins=4))
 
-    # x 从左到右：RA 递减
+    # RA decreases from left to right.
     ax.set_xlim(max(extent[0], extent[1]), min(extent[0], extent[1]))
 
 
 def _clean_floor_int(x, tol=1e-6):
     """
-    避免 9.999999 被 floor 成 9。
-    如果非常接近整数，就按整数处理。
+    Avoid flooring 9.999999 to 9.
+    Treat values very close to an integer as that integer.
     """
     r = np.round(x)
     if np.isclose(x, r, atol=tol, rtol=0):
@@ -190,8 +191,8 @@ def _clean_floor_int(x, tol=1e-6):
 
 def _clean_ceil_int(x, tol=1e-6):
     """
-    避免 10.000001 被 ceil 成 11。
-    如果非常接近整数，就按整数处理。
+    Avoid ceiling 10.000001 to 11.
+    Treat values very close to an integer as that integer.
     """
     r = np.round(x)
     if np.isclose(x, r, atol=tol, rtol=0):
@@ -201,12 +202,12 @@ def _clean_ceil_int(x, tol=1e-6):
 
 def _get_integer_ticks_from_image(im, small_range_limit=5):
     """
-    根据 imshow 数据自动检查 colorbar 范围。
+    Inspect the colorbar range automatically from the imshow data.
 
-    如果数据范围 <= small_range_limit：
-        使用固定整数 ticks，例如 8, 9, 10。
-    如果数据范围 > small_range_limit：
-        返回 None，后面继续用 MaxNLocator。
+    If the data range is <= small_range_limit:
+        Use fixed integer ticks such as 8, 9, 10.
+    If the data range is > small_range_limit:
+        Return None so the caller continues with MaxNLocator.
     """
     arr = np.ma.asarray(im.get_array()).filled(np.nan)
     finite = arr[np.isfinite(arr)]
@@ -222,7 +223,7 @@ def _get_integer_ticks_from_image(im, small_range_limit=5):
         return None, None, None
 
     if data_range <= small_range_limit:
-        # 如果数据几乎是常数，比如全部接近 10
+        # If the data are nearly constant, for example all close to 10.
         if np.isclose(data_min, data_max, atol=1e-8, rtol=0):
             center = int(np.round(data_min))
             vmin = center - 1
@@ -231,7 +232,7 @@ def _get_integer_ticks_from_image(im, small_range_limit=5):
             vmin = _clean_floor_int(data_min)
             vmax = _clean_ceil_int(data_max)
 
-            # 防止 vmin == vmax 导致 colorbar 无法正常显示
+            # Avoid vmin == vmax, which prevents the colorbar from rendering correctly.
             if vmin >= vmax:
                 center = int(np.round(0.5 * (data_min + data_max)))
                 vmin = center - 1
@@ -246,13 +247,13 @@ def _get_integer_ticks_from_image(im, small_range_limit=5):
 def add_cbar_below(fig, ax, im, label, nbins=5):
     divider = make_axes_locatable(ax)
 
-    # pad 控制 colorbar 和主图 x 轴坐标之间的距离；
-    # 数值越大，colorbar 离坐标轴越远。
+    # pad controls the distance between the colorbar and the main x-axis labels.
+    # Larger values place the colorbar farther from the axis.
     cax = divider.append_axes("bottom", size="6%", pad=0.7)
 
     # =====================================================
-    # 先检查数据范围
-    # 如果范围 <= 5，就使用整数 fixed ticks
+    # Check the data range first.
+    # Use fixed integer ticks when the range is <= 5.
     # =====================================================
     fixed_vmin, fixed_vmax, fixed_ticks = _get_integer_ticks_from_image(
         im,
@@ -269,10 +270,10 @@ def add_cbar_below(fig, ax, im, label, nbins=5):
     formatter = FuncFormatter(colorbar_no_decimal_formatter)
 
     if fixed_ticks is not None:
-        # 小范围：例如 8, 9, 10，直接固定整数 ticks
+        # Small range: use fixed integer ticks such as 8, 9, 10.
         locator = FixedLocator(fixed_ticks)
     else:
-        # 大范围：仍然自动选 tick，但强制尽量使用整数
+        # Large range: choose ticks automatically while preferring integers.
         locator = MaxNLocator(nbins=nbins, integer=True)
 
     cbar.locator = locator
@@ -286,7 +287,7 @@ def add_cbar_below(fig, ax, im, label, nbins=5):
 
 
 # =========================================================
-# 3. 计算当前源的 Moment 0 / Moment 1 / FWHM（full-size）
+# 3. Compute Moment 0, Moment 1, and FWHM for the current source at full size.
 # =========================================================
 def compute_source_maps_full(df, nx_full, ny_full):
     df = df.copy()
@@ -333,12 +334,12 @@ def compute_source_maps_full(df, nx_full, ny_full):
 
 
 # =========================================================
-# 4. 计算 zoom 区域
+# 4. Compute the zoom region.
 # =========================================================
 def _expand_1d_window_around_center(center, target_width, nmax):
     """
-    以 center 为中心，把窗口宽度扩展到 target_width。
-    返回整数切片 [i0, i1)，并自动处理边界。
+    Expand the window to target_width around center.
+    Return the integer slice [i0, i1), clipping safely at the boundaries.
     """
     target_width = int(np.ceil(target_width))
     target_width = max(1, min(target_width, nmax))
@@ -375,11 +376,11 @@ def get_zoom_window_match_fullfield_aspect(
     source_tag=""
 ):
     """
-    自动计算每个源 zoom-in 区域的 x 方向需要拓宽多少，
-    使 zoom-in 的三个 moment maps 的数据宽高比与左上角 full-field 图一致。
+    Automatically determine how much to widen the x direction for each source zoom-in region.
+    Match the data aspect ratio of the three zoomed moment maps to the upper-left full-field panel.
 
-    这里固定 y 方向 padding，只自动扩展 x 方向。
-    这样 Moment 0 zoom、Moment 1 zoom、FWHM zoom 的长宽比会与第一行第一张图一致。
+    Keep the y-direction padding fixed and expand only in x.
+    This keeps the Moment 0, Moment 1, and FWHM zoom aspect ratios consistent with the first panel.
     """
     if pad_y is None:
         pad_y = pad
@@ -390,32 +391,32 @@ def get_zoom_window_match_fullfield_aspect(
     xs = pix["x_pixel"].values.astype(int)
     ys = pix["y_pixel"].values.astype(int)
 
-    # 先按照正常 padding 确定 y 范围
+    # Determine the y range using the normal padding first.
     y0 = max(ys.min() - pad_y, 0)
     y1 = min(ys.max() + pad_y + 1, ny_full)
 
-    # x 至少保留默认 padding 后的源范围
+    # Keep at least the source x range after the default padding.
     x0_base = max(xs.min() - min_pad_x, 0)
     x1_base = min(xs.max() + min_pad_x + 1, nx_full)
     base_width_pix = x1_base - x0_base
 
-    # full-field 图的数据宽高比：width / height
+    # Full-field data aspect ratio: width / height.
     full_width_deg = abs(full_extent[1] - full_extent[0])
     full_height_deg = abs(full_extent[3] - full_extent[2])
     target_ratio = full_width_deg / full_height_deg
 
-    # 当前 y 范围对应的角尺度高度
+    # Angular height corresponding to the current y range.
     zoom_height_deg = abs(y_edges[y1] - y_edges[y0])
 
-    # x 像素角尺度，用于把目标角宽度转成像素数
+    # Angular scale per x pixel, used to convert target angular width to pixels.
     dx_deg = np.nanmedian(np.abs(np.diff(x_edges)))
     target_width_deg = target_ratio * zoom_height_deg
     target_width_pix = int(np.ceil(target_width_deg / dx_deg))
 
-    # 只扩展 x，不缩小已有 x 范围
+    # Only expand x; do not shrink the existing x range.
     final_width_pix = max(base_width_pix, target_width_pix)
 
-    # 以源自身 x 范围中心为中心，而不是以 padding 后窗口中心为中心
+    # Center on the source x range itself rather than on the padded window center.
     x_center = 0.5 * (xs.min() + xs.max() + 1)
     x0, x1 = _expand_1d_window_around_center(
         center=x_center,
@@ -447,7 +448,7 @@ def get_crop_extent(x_edges, y_edges, x0, x1, y0, y1):
 
 
 # =========================================================
-# 5. 绘图函数：每个源 2×2 四张子图
+# 5. Plotting function: one 2x2 four-panel figure per source.
 # =========================================================
 def plot_source_summary_figure_2x2(
     source_tag,
@@ -507,7 +508,7 @@ def plot_source_summary_figure_2x2(
         nbins=cbar_nbins
     )
 
-    # zoom-in 区域红色虚线框
+    # Red dashed box marking the zoom-in region.
     zx0, zx1, zy0, zy1 = zoom_extent
 
     rect_x = min(zx0, zx1)
@@ -586,15 +587,15 @@ def plot_source_summary_figure_2x2(
         add_cbar_below(fig, ax, im, cbar_label, nbins=cbar_nbins)
 
     # =====================================================
-    # C. 坐标轴格式
-    #    不再用前面的 apply_sky_axes()
-    #    改成像 plot_all_sources_wcs() 那样，在绘图函数后面统一设置
+    # C. Axis formatting
+    #    No longer use the earlier apply_sky_axes().
+    #    Set the axes uniformly near the end of the plotting function, as in plot_all_sources_wcs().
     # =====================================================
 
     def _get_visible_ticks(axis_obj, which="x", reverse=False):
         """
-        取当前坐标轴可见范围内的 major ticks。
-        reverse=True 用于 RA 轴，因为 RA 通常从左到右递减。
+        Get major ticks within the current visible axis range.
+        Use reverse=True for the RA axis because RA usually decreases from left to right.
         """
         if which == "x":
             ticks = axis_obj.get_xticks()
@@ -615,7 +616,7 @@ def plot_source_summary_figure_2x2(
     def _ra_deg_to_hour_minute(ra_deg):
         """
         RA degree -> hour/minute.
-        例如 356 deg -> 23h44m.
+        Example: 356 deg -> 23h44m.
         """
         ra_hour = (ra_deg / 15.0) % 24.0
 
@@ -632,8 +633,8 @@ def plot_source_summary_figure_2x2(
     def _deg_to_degree_minute(value_deg):
         """
         degree decimal -> degree/minute.
-        例如 356.50 deg -> 356°30′.
-        例如 -5.50 deg -> -5°30′.
+        Example: 356.50 deg -> 356 deg 30 arcmin.
+        Example: -5.50 deg -> -5 deg 30 arcmin.
         """
         sign = "-" if value_deg < 0 else ""
         value_abs = abs(value_deg)
@@ -651,7 +652,7 @@ def plot_source_summary_figure_2x2(
     def make_ra_hour_formatter(axis_obj):
         """
         Bottom RA axis:
-        同一个小时只保留一次 23h，后面的 tick 只写 44m, 43m, 42m ...
+        Show the hour label only once, then write later ticks as minutes such as 44m, 43m, 42m.
         """
         def formatter(x, pos):
             ticks = _get_visible_ticks(
@@ -687,8 +688,8 @@ def plot_source_summary_figure_2x2(
     def make_deg_min_formatter(axis_obj, which="x"):
         """
         RA degree / Dec degree axis:
-        同一个 degree 只保留一次 356° 或 -5°，
-        后面的 tick 只写 30′, 45′ ...
+        Show each degree label only once, such as 356 deg or -5 deg.
+        Write later ticks using only arcminutes such as 30 arcmin, 45 arcmin.
         """
         def formatter(value, pos):
             reverse = False
@@ -737,15 +738,15 @@ def plot_source_summary_figure_2x2(
 
     for ax, extent, show_dec_axis, show_dec_label in axes_info:
 
-        # x 从左到右：RA 递减
+        # RA decreases from left to right.
         ax.set_xlim(max(extent[0], extent[1]), min(extent[0], extent[1]))
 
-        # y 正常从下到上递增
+        # y increases normally from bottom to top.
         ax.set_ylim(min(extent[2], extent[3]), max(extent[2], extent[3]))
 
         # -------------------------
         # Bottom RA axis: hour format
-        # 只保留一个 23h，后面只写 44m, 43m ...
+        # Keep only one 23h label; later ticks show only 44m, 43m, and so on.
         # -------------------------
         ax.set_xlabel("Right Ascension (J2000)", fontsize=FONTSIZE_AXIS)
 
@@ -763,7 +764,7 @@ def plot_source_summary_figure_2x2(
 
         # -------------------------
         # Left Dec axis: degree-minute format
-        # 例如 -5°30′，同一个 degree 后面只写 45′
+        # Example: for -5 deg 30 arcmin, later ticks in the same degree show only 45 arcmin.
         # -------------------------
         ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
         ax.yaxis.set_major_formatter(
@@ -795,7 +796,7 @@ def plot_source_summary_figure_2x2(
 
         # -------------------------
         # Top RA axis: degree-minute format
-        # 例如 356°30′，同一个 degree 后面只写 45′
+        # Example: for 356 deg 30 arcmin, later ticks in the same degree show only 45 arcmin.
         # -------------------------
         top_ax = ax.secondary_xaxis(
             "top",
@@ -831,9 +832,9 @@ def plot_source_summary_figure_2x2(
         fontsize=FONTSIZE_SUPTITLE,
         y=0.98,
         x=0.52
-        )
+    )
 
-    # 固定边距，保证所有图版式一致
+    # Use fixed margins so every figure keeps the same layout.
     fig.subplots_adjust(
         left=0.075,
         right=0.975,
@@ -843,13 +844,13 @@ def plot_source_summary_figure_2x2(
         hspace=0.36
     )
 
-    # 注意：不要用 bbox_inches='tight'，否则每张图物理大小会不一致
+    # Note: do not use bbox_inches='tight', otherwise each figure will have a different physical size.
     fig.savefig(output_pdf, dpi=300)
     plt.close(fig)
 
 
 # =========================================================
-# 6. 读取原始 FITS，只做一次
+# 6. Read the original FITS file only once.
 # =========================================================
 with fits.open(fitsname) as hdul:
     cube_data = hdul[0].data
@@ -865,7 +866,7 @@ wcs3d = WCS(header)
 wcs2d = wcs3d.celestial
 
 # =========================================================
-# 7. 生成完整空间坐标
+# 7. Generate the full spatial coordinate grids.
 # =========================================================
 yy, xx = np.mgrid[0:ny_full, 0:nx_full]
 
@@ -881,15 +882,15 @@ y_edges = centers_to_edges(y_dec_deg_1d)
 full_extent = [x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]]
 
 # =========================================================
-# 8. 主循环：每个源输出一张 2×2 图
+# 8. Main loop: output one 2x2 figure for each source.
 # =========================================================
 for snr_str in SNR_LIST:
     out_dir = os.path.join(BASE_OUT, f"SNR={snr_str}")
     os.makedirs(out_dir, exist_ok=True)
 
     for sid in SOURCE_IDS:
-        # 编号重新映射
-        # 不重新编号，直接使用原始 source 编号
+        # ID remapping.
+        # Do not renumber; use the original source ID directly.
         source_tag = f"source_{sid:03d}"
         
         input_csv = (
@@ -913,8 +914,8 @@ for snr_str in SNR_LIST:
 
         source_maps = compute_source_maps_full(df, nx_full, ny_full)
 
-        # 自动计算每个源 x 方向需要拓宽多少，
-        # 使三个 zoom-in moment maps 的宽高比与左上角 full-field 图一致。
+        # Widen the x direction as needed so all zoomed moment maps share
+        # the full-field panel's aspect ratio.
         x0, x1, y0, y1 = get_zoom_window_match_fullfield_aspect(
             df=df,
             nx_full=nx_full,

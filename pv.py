@@ -19,10 +19,10 @@ from reproject import reproject_interp
 
 
 # ============================================================
-# 0. 字体设置
+# 0. Font settings
 # ============================================================
 def set_times_new_roman_font():
-    """优先使用 Times New Roman；找不到时使用 serif 字体。"""
+    """Prefer Times New Roman; fall back to a serif font if it is unavailable."""
     font_loaded = False
 
     possible_paths = [
@@ -90,7 +90,7 @@ plt.rcParams["font.size"] = 12
 
 
 # ============================================================
-# 1. 用户参数（主要改这里）
+# 1. User parameters; edit this section first.
 # ============================================================
 CUBE_FILE = "./baseline/CRAFTS_-4.7_-350_-150_baseline.fits"
 
@@ -139,35 +139,35 @@ PATH_CONFIGS = {
     },
 }
 
-# 同一 final source、同一空间 pixel 若对应多个高斯分量：
-# True  -> 用 amplitude_K 加权成一个速度点（与 merged_position 一致）
-# False -> 保留每条 CSV 记录（同一 pixel 可能在 PV 中出现多个点）
+# If one final source and one spatial pixel contain multiple Gaussian components:
+# True  -> Weight by amplitude_K to produce one velocity point, consistent with merged_position.
+# False -> Keep every CSV record; one pixel may contribute multiple points in PV space.
 ONE_POINT_PER_SPATIAL_PIXEL = False
 
-# 左图：保留原来的源边界轮廓
+# Left panel: keep the original source-boundary contours.
 DRAW_SOURCE_MASK_CONTOURS_ON_LEFT = True
 
-# 左图：叠加 moment0 contour（由 CSV 中的 moment0_K_kms 构建）
+# Left panel: overlay the moment0 contour built from moment0_K_kms in the CSV.
 LEFT_MOM0_CONTOUR_LEVELS = [0, 10, 20, 30, 40, 50]
 LEFT_MOM0_CONTOUR_CMAP = "Purples_r"
 LEFT_MOM0_CONTOUR_ALPHA = 1.0
 LEFT_MOM0_CONTOUR_LINEWIDTH = 3
 
-# 右图：注意由于右图是 PV 图，不能直接叠加“2D moment0 contour”；
-# 因此这里叠加的是 PV 图本身的亮温 contour。
-# contour levels 与右图 0--0.8 K 的色标范围保持一致。
+# Right panel: because this is a PV diagram, the 2D moment0 contour cannot be overlaid directly.
+# Overlay brightness-temperature contours from the PV diagram itself instead.
+# Keep contour levels consistent with the 0--0.8 K color scale in the right panel.
 RIGHT_PV_CONTOUR_LEVELS = [0.36,  0.60, 0.84]
 RIGHT_PV_CONTOUR_COLOR = "white"
 RIGHT_PV_CONTOUR_LINEWIDTH = 1.0
 
-# 右图：用 CSV 中每个源在 PV 平面上的像素位置生成同色轮廓
+# Right panel: build same-color contours from each source pixel position in PV space.
 DRAW_SOURCE_PV_CONTOURS = True
 SOURCE_PV_CONTOUR_DILATION = 2
 SOURCE_PV_CONTOUR_SMOOTH_SIGMA = 1.0
 SOURCE_PV_CONTOUR_LEVEL = 0.35
 SOURCE_PV_CONTOUR_LINEWIDTH = 2.5
 
-# 是否同时显示源的散点、中心十字和文字标签
+# Whether to show source scatter points, center crosses, and text labels together.
 PLOT_ALL_SOURCE_PIXELS_ON_PV = False
 PV_SCATTER_SIZE = 10
 PV_SCATTER_ALPHA = 0.60
@@ -175,10 +175,10 @@ DRAW_SOURCE_CENTER_MARKER_ON_PV = False
 SHOW_SOURCE_LABELS_ON_PV = True
 PV_MARKER = "+"
 
-# 是否只保留位于 PV path 宽度内的像素
+# Whether to keep only pixels within the PV path width.
 REQUIRE_INSIDE_PATH_WIDTH = True
 
-# 左图和右图的标注偏移
+# Label offsets for the left and right panels.
 LABEL_OFFSETS_WORLD = {
     6: (-0.12, -0.02),
     7: (0.10, 0.06),
@@ -191,25 +191,25 @@ LABEL_OFFSETS_PV_PIXEL = {
     8: (2.0, 10.0),
 }
 
-# 是否标记左图中的源中心和文字
+# Whether to mark source centers and labels in the left panel.
 SHOW_SOURCE_LABELS_ON_LEFT = False
 
-# 是否标记右图中的源中心和文字
+# Whether to mark source centers and labels in the right panel.
 SHOW_SOURCE_LABELS_ON_PV = False
 DRAW_SOURCE_CENTER_MARKER_ON_PV = False
 # ============================================================
-# 2. 工具函数
+# 2. Helper functions
 # ============================================================
 def require_file(path, description):
     if not os.path.exists(path):
         raise FileNotFoundError(
-            f"{description} 不存在：\n{path}\n请检查脚本第 1 部分的路径设置。"
+            f"{description} does not exist:\n{path}\nPlease check the path settings in section 1 of the script."
         )
 
 
 
 def load_and_crop_mask_to_subcube(mask_path, sub_cube):
-    """将最终 source-ID mask 重投影到 subcube 的空间网格。"""
+    """Reproject the final source-ID mask onto the spatial grid of the subcube."""
     require_file(mask_path, "Source ID mask")
 
     mask_data, mask_header = fits.getdata(mask_path, header=True)
@@ -217,7 +217,7 @@ def load_and_crop_mask_to_subcube(mask_path, sub_cube):
 
     if mask_data.ndim != 2:
         raise ValueError(
-            f"Source ID mask 必须是二维数组，当前 shape={mask_data.shape}"
+            f"Source ID mask must be a 2D array; current shape={mask_data.shape}"
         )
 
     n_y, n_x = sub_cube.shape[-2:]
@@ -234,13 +234,13 @@ def load_and_crop_mask_to_subcube(mask_path, sub_cube):
 
 
 def get_source_contours(cropped_mask, source_ids):
-    """从二维 source-ID mask 中提取左图轮廓。"""
+    """Extract left-panel contours from the 2D source-ID mask."""
     contour_dict = {}
 
     for sid in source_ids:
         source_mask = cropped_mask == sid
         if not np.any(source_mask):
-            print(f"Warning: Source {sid} 在裁剪后的 mask 中没有像素。")
+            print(f"Warning: Source {sid} has no pixels in the cropped mask.")
             continue
 
         contours = measure.find_contours(source_mask.astype(float), 0.5)
@@ -256,7 +256,7 @@ def get_source_contours(cropped_mask, source_ids):
 
 
 def get_fixed_source_colors(n_sources=10):
-    """返回与 source-overview 图一致的固定颜色。"""
+    """Return fixed colors consistent with the source-overview plot."""
     fixed_colors = [
         [0.00, 0.00, 0.00, 1.0],
         [0.18, 0.49, 0.74, 1.0],
@@ -284,11 +284,11 @@ def get_fixed_source_colors(n_sources=10):
 
 def load_physical_pixel_table(csv_file, source_ids, one_point_per_pixel=True):
     """
-    读取 save_source_masks_and_pixel_tables() 生成的总 CSV。
+    Read the master CSV generated by save_source_masks_and_pixel_tables().
 
-    若 one_point_per_pixel=True：
-    - 同一 final source、同一空间像素内多个 component 的 velocity 用 amplitude_K 加权
-    - moment0_K_kms 直接求和
+    If one_point_per_pixel=True:
+    - For multiple components in the same final source and spatial pixel, weight velocity by amplitude_K.
+    - Sum moment0_K_kms directly.
     """
     require_file(csv_file, "ROHSA pixel physical-parameter CSV")
 
@@ -315,16 +315,16 @@ def load_physical_pixel_table(csv_file, source_ids, one_point_per_pixel=True):
             )
         else:
             raise ValueError(
-                "CSV 中没有 moment0_K_kms 列，也没有 sigma_kms 列，"
-                "无法构建 moment0 contour。"
+                "The CSV has neither a moment0_K_kms column nor a sigma_kms column,"
+                "so the moment0 contour cannot be built."
             )
 
     missing = sorted(required_columns.difference(df.columns))
     if missing:
         raise ValueError(
-            "CSV 缺少以下必要列："
+            "The CSV is missing the following required columns:"
             + ", ".join(missing)
-            + "\n当前列名为："
+            + "\nCurrent columns:"
             + ", ".join(df.columns)
         )
 
@@ -345,7 +345,7 @@ def load_physical_pixel_table(csv_file, source_ids, one_point_per_pixel=True):
     ].copy()
 
     if df.empty:
-        raise ValueError(f"CSV 中没有找到 Source {source_ids} 的有效 pixel 记录。")
+        raise ValueError(f"No valid pixel records were found in the CSV for Source {source_ids}.")
 
     df["final_source_id"] = df["final_source_id"].astype(int)
     df["x_pixel"] = df["x_pixel"].astype(int)
@@ -383,7 +383,7 @@ def load_physical_pixel_table(csv_file, source_ids, one_point_per_pixel=True):
 
 
 def add_subcube_pixel_coordinates(pixel_df, full_cube, sub_cube):
-    """根据 CSV 中 RA/Dec，计算每个记录在 subcube 中的像素坐标。"""
+    """Compute pixel coordinates in the subcube for each record from RA/Dec in the CSV."""
     result = pixel_df.copy()
 
     ra = result["ra_deg"].to_numpy(dtype=float)
@@ -421,8 +421,8 @@ def add_subcube_pixel_coordinates(pixel_df, full_cube, sub_cube):
 
     if result.empty:
         raise ValueError(
-            "选定源的 CSV 坐标均不在当前 subcube 范围内。"
-            "请检查 X_RANGE、Y_RANGE 与 CSV/FITS 是否对应同一个 cube。"
+            "All selected-source CSV coordinates are outside the current subcube range."
+            "Check that X_RANGE, Y_RANGE, CSV, and FITS refer to the same cube."
         )
 
     return result
@@ -430,7 +430,7 @@ def add_subcube_pixel_coordinates(pixel_df, full_cube, sub_cube):
 
 
 def build_moment0_map_from_table(pixel_df, sub_cube_shape):
-    """根据 subcube 中的像素坐标构建 2D moment0 图。"""
+    """Build a 2D moment0 map from subcube pixel coordinates."""
     n_y, n_x = sub_cube_shape[-2:]
     moment0_map = np.zeros((n_y, n_x), dtype=float)
 
@@ -455,7 +455,7 @@ def build_moment0_map_from_table(pixel_df, sub_cube_shape):
 
 
 def compute_auto_contour_levels(image, nlevels=6):
-    """自动生成 contour levels，适合 moment0 图。"""
+    """Generate contour levels automatically for a moment0 map."""
     valid = image[np.isfinite(image) & (image > 0)]
     if valid.size == 0:
         return None
@@ -474,7 +474,7 @@ def compute_auto_contour_levels(image, nlevels=6):
 
 
 # ============================================================
-# 3. Path 投影与 PV 坐标转换
+# 3. Path projection and PV coordinate conversion
 # ============================================================
 def celestial_pixel_scale_arcmin(celestial_wcs):
     scales_deg = np.abs(proj_plane_pixel_scales(celestial_wcs)) * u.deg
@@ -493,11 +493,11 @@ def path_width_in_pixels(path, celestial_wcs):
 
 def project_table_pixels_to_path(pixel_df, path, celestial_wcs):
     """
-    将 CSV 中每个空间 pixel 投影到 PV path。
+    Project each spatial pixel in the CSV onto the PV path.
 
-    输出新增：
-        offset_pixel            : PV 图 x 方向的像素坐标
-        distance_to_path_pixel  : 到 path 中心线的垂直距离（空间 pixel）
+    New output columns:
+        offset_pixel            : Pixel coordinate along the PV x direction.
+        distance_to_path_pixel  : Perpendicular distance to the path centerline, in spatial pixels.
     """
     path_x, path_y = path.sample_points(spacing=1)
     width_pix = path_width_in_pixels(path, celestial_wcs)
@@ -527,7 +527,7 @@ def project_table_pixels_to_path(pixel_df, path, celestial_wcs):
 
 
 def velocity_kms_to_pv_pixel(velocity_kms, pv_header):
-    """将 km/s 转为 PV 图 y 方向的 0-based 像素坐标。"""
+    """Convert km/s to a 0-based y pixel coordinate in the PV diagram."""
     crpix2 = float(pv_header["CRPIX2"])
     crval2 = float(pv_header["CRVAL2"])
     cdelt2 = float(pv_header["CDELT2"])
@@ -541,10 +541,10 @@ def velocity_kms_to_pv_pixel(velocity_kms, pv_header):
 
 def build_smoothed_pv_source_mask(source_points, pv_shape):
     """
-    根据该源在 PV 图中的 (offset_pixel, velocity_pixel) 构建平滑占据图。
+    Build a smoothed occupancy map from this source in PV coordinates.
 
-    轮廓表示：位于当前 60 arcmin path 宽度内、并由 ROHSA velocity_kms
-    投影到 PV 平面后的源像素分布。它不是把左图 RA-Dec 轮廓直接复制到右图。
+    The contour represents source pixels within the current 60 arcmin path width, using ROHSA velocity_kms
+    after projection into PV space. It is not a direct copy of the left-panel RA-Dec contour.
     """
     occupancy = np.zeros(pv_shape, dtype=bool)
 
@@ -573,7 +573,7 @@ def build_smoothed_pv_source_mask(source_points, pv_shape):
             iterations=SOURCE_PV_CONTOUR_DILATION,
         )
 
-    # 闭运算可以连接相邻的小间隙，减少锯齿和断裂
+    # Morphological closing connects small gaps and reduces jagged or broken contours.
     occupancy = binary_closing(occupancy, iterations=1)
 
     smooth_map = gaussian_filter(
@@ -589,7 +589,7 @@ def build_smoothed_pv_source_mask(source_points, pv_shape):
 
 
 # ============================================================
-# 4. 单个两联图绘制函数
+# 4. Single two-panel plotting function
 # ============================================================
 def make_one_pv_figure(
     path_name,
@@ -638,12 +638,12 @@ def make_one_pv_figure(
     gs = fig.add_gridspec(1, 2, width_ratios=[1.5, 1], wspace=1.0)
 
     # --------------------------------------------------------
-    # 左图：保持原来的画法 + 叠加 moment0 contour
+    # Left panel: keep the original plot style and overlay the moment0 contour.
     # --------------------------------------------------------
     ax_map = fig.add_subplot(gs[0, 0], projection=sub_cube_slab.wcs.celestial)
 
-    # moment0_map 由整个 sub_cube_slab 积分得到，包含当前范围内的所有数据，
-    # 不再只显示 CSV 中 Source 6/7/8 所占据的像素。
+    # moment0_map is integrated from the full sub_cube_slab and includes all data in the current range.
+    # It no longer shows only the pixels occupied by Sources 6/7/8 in the CSV.
     left_image = np.asarray(moment0_map, dtype=float)
 
     im_map = ax_map.imshow(
@@ -686,18 +686,18 @@ def make_one_pv_figure(
                 loc="upper left",
                 fontsize=22,
                 frameon=True,
-                framealpha=0.85,       # 完全不透明，避免后面的图层透出来
+                framealpha=0.85,       # Fully opaque to keep lower layers from showing through.
                 facecolor="white",
                 edgecolor="black",
                 fancybox=False,
             )
         
-            # 保证整个 legend，包括文字、线条和外框，都在所有图层最上方
+            # Keep the entire legend, including text, lines, and frame, above all plot layers.
             legend_left.set_zorder(1000)
 
         
 
-    # 左图 moment0 contour
+    # Left-panel moment0 contour.
     contour1 = ax_map.contour(
         moment0_map,
         cmap=LEFT_MOM0_CONTOUR_CMAP,
@@ -710,7 +710,7 @@ def make_one_pv_figure(
     )
     print(f"  Left-panel moment0 contours: {np.array(LEFT_MOM0_CONTOUR_LEVELS)}")
 
-    # 左图是否标记源中心位置和文字
+    # Whether to mark source centers and labels in the left panel.
     if SHOW_SOURCE_LABELS_ON_LEFT:
         for sid in SOURCE_IDS_TO_SHOW:
             sid_rows = source_pixel_table[
@@ -782,7 +782,7 @@ def make_one_pv_figure(
     ax_map.grid(True, linestyle=":", alpha=0.5)
 
     # --------------------------------------------------------
-    # 右图：PV 图 + PV contour + 标记源位置
+    # Right panel: PV diagram, PV contour, and source markers.
     # --------------------------------------------------------
     ax_pv = fig.add_subplot(gs[0, 1], projection=pv_wcs)
 
@@ -799,8 +799,8 @@ def make_one_pv_figure(
     else:
         ax_pv.set_aspect(0.15)
 
-    # 右图 contour：这里必须是 PV 亮温 contour，而不是 2D moment0 contour。
-    # 使用 spring colormap 区分不同等高线，并且不在等高线上显示数值标签。
+    # Right-panel contour: use the PV brightness-temperature contour, not a 2D moment0 contour.
+    # Use the spring colormap to distinguish contour levels and omit numeric labels on the contours.
     try:
         cs_pv = ax_pv.contour(
             pv_data,
@@ -812,10 +812,10 @@ def make_one_pv_figure(
             zorder=8,
         )
 
-        # 不调用 ax_pv.clabel，因此不显示 0.36 K、0.60 K、0.84 K 等文字。
+        # Do not call ax_pv.clabel, so labels such as 0.36 K, 0.60 K, and 0.84 K are not shown.
         print(f"  Right-panel PV contours: {np.array(RIGHT_PV_CONTOUR_LEVELS)}")
     except Exception as e:
-        print(f"  Warning: 右图 contour 绘制失败: {e}")
+        print(f"  Warning: Right-panel contour plotting failed: {e}")
 
     for sid in SOURCE_IDS_TO_SHOW:
         source_points = projected_table[
@@ -823,11 +823,11 @@ def make_one_pv_figure(
         ]
 
         if source_points.empty:
-            print(f"  Source {sid}: 这条 path 宽度内没有可绘制的 pixel。")
+            print(f"  Source {sid}: has no drawable pixels within this path width.")
             continue
 
         # ----------------------------------------------------
-        # 1. 用源像素在 PV 平面中的分布绘制彩色轮廓
+        # 1. Draw colored contours from the source-pixel distribution in PV space.
         # ----------------------------------------------------
         if DRAW_SOURCE_PV_CONTOURS:
             source_pv_mask = build_smoothed_pv_source_mask(
@@ -847,10 +847,10 @@ def make_one_pv_figure(
                     zorder=13,
                 )
             else:
-                print(f"  Warning: Source {sid} 无法生成 PV source contour。")
+                print(f"  Warning: Source {sid} could not generate a PV source contour.")
 
         # ----------------------------------------------------
-        # 2. 可选：显示该源所有像素散点
+        # 2. Optional: show all pixel scatter points for this source.
         # ----------------------------------------------------
         if PLOT_ALL_SOURCE_PIXELS_ON_PV:
             ax_pv.scatter(
@@ -865,7 +865,7 @@ def make_one_pv_figure(
                 zorder=14,
             )
 
-        # 代表位置使用源像素在 PV 平面中的中位数
+        # Use the median source-pixel position in PV space as the representative position.
         x_med = np.nanmedian(source_points["offset_pixel"])
         y_med = np.nanmedian(source_points["velocity_pixel"])
 
@@ -940,7 +940,7 @@ def make_one_pv_figure(
 
 
 # ============================================================
-# 5. 主程序
+# 5. Main program
 # ============================================================
 def main():
     require_file(CUBE_FILE, "FITS cube")
@@ -990,8 +990,8 @@ def main():
         print(f"  Source {sid}: {n_rows} spatial rows after loading/grouping")
 
     print("\nBuilding full-field moment0 map from the complete subcube slab ...")
-    # 对当前 RA-Dec 范围以及 VELOCITY_RANGE 内的整个数据立方积分。
-    # 这样左图显示所有观测数据，而不是只显示被选中源的 CSV 像素。
+    # Integrate the full data cube over the current RA-Dec range and VELOCITY_RANGE.
+    # This lets the left panel show all observed data rather than only selected-source CSV pixels.
     moment0_map = np.asarray(
         sub_cube_slab.moment(order=0).value,
         dtype=float,

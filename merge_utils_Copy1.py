@@ -17,7 +17,7 @@ from spectral_cube import SpectralCube
 
 
 # ============================================================
-# 0. 设置 Times New Roman 字体
+# 0. Set the Times New Roman font.
 # ============================================================
 def set_times_new_roman_font():
     """
@@ -129,7 +129,7 @@ def set_times_new_roman_font():
 
 
 # ============================================================
-# 1. 读取 FITS 空间 WCS
+# 1. Read the spatial WCS from FITS.
 # ============================================================
 def get_coordinate_info(fits_file):
     try:
@@ -149,16 +149,16 @@ def get_coordinate_info(fits_file):
 
 
 # ============================================================
-# 2. 读取 DAT 文件
+# 2. Read the DAT file.
 # ============================================================
 def read_filtered_dat(core, dat_file):
     """
-    读取筛选后的 ROHSA DAT 文件。
+    Read the filtered ROHSA DAT file.
 
-    重要：
-    你的 FITS 速度轴数值已经是 km/s。
-    因此这里不再依赖 core.physical_gaussian() 的速度单位转换，
-    而是直接用 header 中的 CRVAL3、CRPIX3、CDELT3 手动从 pixel 转为 km/s。
+    Important:
+    The FITS velocity-axis values are already in km/s.
+    Therefore this code no longer relies on core.physical_gaussian() for velocity-unit conversion.
+    Instead, it converts pixels to km/s manually using CRVAL3, CRPIX3, and CDELT3 from the header.
 
     position_phys:
         v = CRVAL3 + (pos_pixel + 1 - CRPIX3) * CDELT3
@@ -166,11 +166,11 @@ def read_filtered_dat(core, dat_file):
     dispersion_phys:
         sigma_v = abs(sigma_pixel * CDELT3)
 
-    最终：
-        position_phys 单位为 km/s
-        dispersion_phys 单位为 km/s
-        FWHM 单位为 km/s
-        Moment0 单位为 K km/s
+    Final quantities:
+        position_phys is in km/s.
+        dispersion_phys is in km/s.
+        FWHM is in km/s.
+        Moment0 is in K km/s.
     """
 
     print("\n" + "=" * 60)
@@ -184,7 +184,7 @@ def read_filtered_dat(core, dat_file):
     print(f"Data type: {gaussian_pixel.dtype}")
 
     # --------------------------------------------------------
-    # 读取 header 的速度轴信息
+    # Read velocity-axis information from the header.
     # --------------------------------------------------------
     if not hasattr(core, "hdr"):
         raise ValueError("core.hdr does not exist. Please set core.hdr = hdr in the notebook.")
@@ -203,8 +203,8 @@ def read_filtered_dat(core, dat_file):
     print(f"  CUNIT3 = {cunit3}")
 
     # --------------------------------------------------------
-    # 你的数据现在确认：速度轴数值就是 km/s
-    # 所以这里强制采用 km/s，不做 /1000 或 *1000
+    # The data have been verified to store velocity-axis values in km/s.
+    # Use km/s directly here; do not divide or multiply by 1000.
     # --------------------------------------------------------
     velocity_unit = "km/s"
     print("\nUsing spectral values directly as km/s.")
@@ -225,19 +225,19 @@ def read_filtered_dat(core, dat_file):
         dis_pixel = gaussian_pixel[3 * (comp - 1) + 2]
 
         # ----------------------------------------------------
-        # Amplitude 本身就是 K
+        # Amplitude is already in K.
         # ----------------------------------------------------
         amp_phys = amp_pixel
 
         # ----------------------------------------------------
-        # 手动从 pixel 坐标转换到 km/s
-        # 注意 FITS WCS 是 1-based，所以 pos_pixel + 1
+        # Convert manually from pixel coordinates to km/s.
+        # FITS WCS is 1-based, so use pos_pixel + 1.
         # ----------------------------------------------------
         pos_phys = crval3 + (pos_pixel + 1.0 - crpix3) * cdelt3
 
         # ----------------------------------------------------
-        # sigma 的单位转换只需要乘以每个 channel 的速度宽度
-        # 因为 sigma 是宽度，不加 CRVAL3/CRPIX3
+        # Convert sigma units by multiplying by the velocity width per channel.
+        # Because sigma is a width, do not add CRVAL3/CRPIX3 offsets.
         # ----------------------------------------------------
         dis_phys = np.abs(dis_pixel * cdelt3)
 
@@ -246,7 +246,7 @@ def read_filtered_dat(core, dat_file):
             "position_pixel": pos_pixel,
             "dispersion_pixel": dis_pixel,
 
-            # 后续代码统一使用这些物理量
+            # Use these physical quantities consistently in downstream code.
             "amplitude_phys": amp_phys,
             "position_phys": pos_phys,
             "dispersion_phys": dis_phys,
@@ -287,7 +287,7 @@ def read_filtered_dat(core, dat_file):
 
 
 # ============================================================
-# 3. 从单个 component 中提取源
+# 3. Extract sources from one component.
 # ============================================================
 def extract_sources_from_component(results, comp, min_pixels=5, max_gap=2):
     amplitude = results[f"comp{comp}"]["amplitude_phys"]
@@ -383,7 +383,7 @@ def extract_sources_from_component(results, comp, min_pixels=5, max_gap=2):
 
 
 # ============================================================
-# 4. 合并判断
+# 4. Merge criteria.
 # ============================================================
 def count_overlap_pixels(source1, source2):
     pix1 = source1["pixel_set"] if "pixel_set" in source1 else set(source1["pixels"])
@@ -649,7 +649,7 @@ def auto_merge_all_components(
 
 
 # ============================================================
-# 6. 创建最终参数图
+# 6. Create final parameter maps.
 # ============================================================
 def create_final_parameter_maps(all_sources, results, shape):
     n_x, n_y = shape
@@ -714,7 +714,7 @@ def create_final_parameter_maps(all_sources, results, shape):
 
 
 # ============================================================
-# 7. WCS 绘图
+# 7. WCS plotting.
 # ============================================================
 def plot_all_sources_wcs(
     all_sources,
@@ -760,9 +760,9 @@ def plot_all_sources_wcs(
        # -------------------------
     # Panel 1: Source ID map
     # -------------------------
-    # 固定颜色方案
-    # colors[0] 是背景
-    # colors[1] 对应 Source 1
+    # Fixed color scheme.
+    # colors[0] is the background.
+    # colors[1] corresponds to Source 1.
     fixed_colors = [
         [0.0, 0.0, 0.0, 1.0],     # 0 background: black
 
@@ -818,9 +818,9 @@ def plot_all_sources_wcs(
         )
 
         # --------------------------------------------------
-        # 手动调整数字标注位置，单位是 degree
-        # 正的 offset_ra 表示 RA 数值增大；
-        # 由于天图 RA 轴通常反向显示，视觉上可能会向左移动。
+        # Manually adjust numeric label positions in degrees.
+        # A positive offset_ra means a larger RA value.
+        # Because sky-map RA axes are usually reversed, this may appear to move left visually.
         # --------------------------------------------------
         label_offsets = {
             6: (-0.13, -0.02),
@@ -859,8 +859,8 @@ def plot_all_sources_wcs(
         )
 
     # --------------------------------------------------
-    # Panel 1 不显示 source-ID colorbar，
-    # 但保留一个空白 colorbar 位置，保证 ax1 和 ax2 上边界对齐
+    # Panel 1 does not display the source-ID colorbar.
+    # Keep an empty colorbar slot so the top edges of ax1 and ax2 stay aligned.
     # --------------------------------------------------
     cbar1 = plt.colorbar(
         im1,
@@ -872,8 +872,8 @@ def plot_all_sources_wcs(
         ticks=[],
     )
     
-    # 清空 colorbar 内容，但不 remove，
-    # 因为 remove 会把预留空间也去掉
+    # Clear the colorbar contents, but do not remove the axis.
+    # Removing it would also remove the reserved space.
     cbar1.ax.clear()
     cbar1.ax.set_frame_on(False)
     cbar1.ax.set_xticks([])
@@ -967,7 +967,7 @@ def plot_all_sources_wcs(
     cbar4.ax.tick_params(labelsize=17, direction="in", width=1.1, length=5)
 
     # -------------------------
-    # WCS 坐标格式
+    # WCS coordinate formatting.
     # -------------------------
     for i, ax in enumerate(axes_list):
         ax.coords[0].set_ticks_position("b")
@@ -1025,7 +1025,7 @@ def plot_all_sources_wcs(
 
 
 # ============================================================
-# 7b. 保存每个源的 composition PDF
+# 7b. Save a composition PDF for each source.
 # ============================================================
 def plot_individual_source_compositions_wcs(
     all_sources,
@@ -1034,9 +1034,9 @@ def plot_individual_source_compositions_wcs(
     wcs_2d,
 ):
     """
-    为每一个 final source 单独保存一张 composition 图。
+    Save one composition figure for each final source.
 
-    输出文件：
+    Output file:
         source_compositions/source_001_composition.pdf
         source_compositions/source_002_composition.pdf
         ...
@@ -1072,7 +1072,7 @@ def plot_individual_source_compositions_wcs(
 
         source_mask = merged_source_id == source_id
 
-        # 背景：该 final source 的整体 mask
+        # Background: full mask of this final source.
         ax.imshow(
             source_mask,
             origin="lower",
@@ -1084,7 +1084,7 @@ def plot_individual_source_compositions_wcs(
 
         legend_handles = []
 
-        # 不同 component source 的轮廓
+        # Contours of the different component sources.
         for j, comp_src in enumerate(source["component_sources"]):
 
             comp_mask = np.zeros_like(source_mask, dtype=bool)
@@ -1114,7 +1114,7 @@ def plot_individual_source_compositions_wcs(
                     )
                 )
 
-        # 标出 final source 质心
+        # Mark the final-source centroid.
         xcen, ycen = source["centroid"]
         world_coords = wcs_2d.pixel_to_world(xcen, ycen)
 
@@ -1130,7 +1130,7 @@ def plot_individual_source_compositions_wcs(
             zorder=5,
         )
 
-        # 信息框
+        # Information box.
         info_text = (
             f"Source {source_id}\n"
             rf"$N_{{pix}}$={source['pixel_count']}" "\n"
@@ -1155,7 +1155,7 @@ def plot_individual_source_compositions_wcs(
         )
 
         # -----------------------------
-        # 坐标轴格式：下 RA hour，上 RA deg，左 Dec deg
+        # Axis format: RA in hours at the bottom, RA in degrees at the top, Dec in degrees on the left.
         # -----------------------------
         ax.coords[0].set_ticks_position("b")
         ax.coords[0].set_ticklabel_position("b")
@@ -1217,7 +1217,7 @@ def plot_individual_source_compositions_wcs(
 
 
 # ============================================================
-# 8. 保存结果
+# 8. Save results.
 
 
 
@@ -1233,21 +1233,21 @@ from astropy.wcs import WCS
 
 def make_2d_celestial_header_from_fits(fits_file, shape_2d=None):
     """
-    从原始 3D FITS 中提取 2D celestial WCS header。
+    Extract the 2D celestial WCS header from the original 3D FITS cube.
 
     Parameters
     ----------
     fits_file : str
-        原始 FITS cube 路径。
+        Path to the original FITS cube.
 
     shape_2d : tuple or None
-        2D mask 的形状，格式为 (n_y, n_x)。
-        如果给出，会把 NAXIS1 和 NAXIS2 写入 header。
+        Shape of the 2D mask, as (n_y, n_x).
+        If provided, NAXIS1 and NAXIS2 are written into the header.
 
     Returns
     -------
     header_2d : astropy.io.fits.Header
-        只包含 RA/Dec WCS 的 2D header。
+        A 2D header containing only RA/Dec WCS.
     """
 
     with fits.open(fits_file) as hdul:
@@ -1272,8 +1272,8 @@ def make_2d_celestial_header_from_fits(fits_file, shape_2d=None):
 
 def pixel_to_world_safe(wcs_2d, x, y):
     """
-    安全地把 pixel 坐标转成 RA/Dec。
-    如果 WCS 不可用，则返回 NaN。
+    Safely convert pixel coordinates to RA/Dec.
+    Return NaN if WCS is unavailable.
     """
 
     if wcs_2d is None:
@@ -1288,20 +1288,21 @@ def pixel_to_world_safe(wcs_2d, x, y):
 
 def build_final_source_id_map(all_sources, shape):
     """
-    根据 all_sources 创建最终 source ID map。
+    Create the final source-ID map from all_sources.
 
     Parameters
     ----------
     all_sources : list
-        merge 后的最终源列表。
+        Final source list after merging.
 
     shape : tuple
-        (n_x, n_y)，即 results["shape"]。
+        (n_x, n_y), which is the layout used by results["shape"].
 
     Returns
     -------
     source_id_map : 2D ndarray
-        shape = (n_y, n_x)，背景为 0，源区域为 source_id。
+        Array with shape (n_y, n_x); background pixels are 0 and source pixels
+        contain their source_id.
     """
 
     n_x, n_y = shape
@@ -1326,9 +1327,9 @@ def save_source_masks_and_pixel_tables(
     header_nlines=27,
 ):
     """
-    保存并合后每个源的 mask 和每个像素点的参数。
+    Save masks for each merged source and per-pixel parameters.
 
-    输出目录结构：
+    Output directory structure:
 
     output_dir/
         masks/
@@ -1351,22 +1352,22 @@ def save_source_masks_and_pixel_tables(
     Parameters
     ----------
     all_sources : list
-        最终并合后的源列表。
+        Final merged source list.
 
     results : dict
-        read_filtered_dat() 返回的结果。
+        Result returned by read_filtered_dat().
 
     output_dir : str
-        总输出目录。
+        Top-level output directory.
 
     original_dat_file : str or None
-        原始 DAT 文件路径。如果提供，会读取前 header_nlines 行作为 .dat 文件头。
+        Original DAT file path. If provided, the first header_nlines lines are used as the .dat header.
 
     fits_file : str or None
-        原始 FITS cube 路径。如果提供，会给 mask FITS 添加 RA/Dec WCS。
+        Original FITS cube path. If provided, RA/Dec WCS is added to mask FITS files.
 
     header_nlines : int
-        原始 DAT 文件头部行数。
+        Number of header lines in the original DAT file.
     """
 
     print("\n" + "=" * 60)
@@ -1756,20 +1757,20 @@ def save_merge_check_results(
 
 def remove_component_sources_before_merge(component_sources, remove_dict):
     """
-    在自动并合之前，删除指定 component 中的指定 source_id。
+    Remove selected source IDs from selected components before automatic merging.
 
-    例如：
+    Example:
         remove_dict = {
             1: [3, 5, 8, 9],
             2: [2, 4],
         }
 
-    表示：
-        删除 Component 1 的 Source 3, 5, 8, 9
-        删除 Component 2 的 Source 2, 4
+    This means:
+        remove Sources 3, 5, 8, and 9 from Component 1
+        remove Sources 2 and 4 from Component 2
 
-    删除之后，剩余的 component sources 再进入 auto_merge_all_components()
-    做自动并合。最终 final source 会自动从 1 开始编号。
+    After removal, the remaining component sources are passed to auto_merge_all_components()
+    for automatic merging. Final sources are automatically numbered from 1.
     """
 
     new_component_sources = {}
@@ -1851,7 +1852,7 @@ def main(
         print("No valid FITS file provided. WCS plot will be skipped.")
 
     # ========================================================
-    # 1. 读取 ROHSA 结果
+    # 1. Read ROHSA results.
     # ========================================================
     results = read_filtered_dat(core, dat_file)
 
@@ -1861,7 +1862,7 @@ def main(
     print(f"\nDetected {n_components} Gaussian components")
 
     # ========================================================
-    # 2. 从每个 component 中提取 source
+    # 2. Extract sources from each component.
     # ========================================================
     print("\n" + "=" * 60)
     print("EXTRACTING SOURCES FROM EACH COMPONENT")
@@ -1902,13 +1903,13 @@ def main(
             remove_dict=REMOVE_DICT,
              )
     # ========================================================
-    # 3. 在并合之前删除指定 component source
+    # 3. Remove selected component sources before merging.
     # ========================================================
     #  REMOVE_COMPONENT_SOURCES = True
 
     # REMOVE_DICT = {
-    #     1: [3, 5, 8, 9],   # 删除 Component 1 的第 3, 5, 8, 9 个源
-    #     2: [2, 4],         # 删除 Component 2 的第 2, 4 个源
+    #     1: [3, 5, 8, 9],   # Remove Sources 3, 5, 8, and 9 from Component 1.
+    #     2: [2, 4],         # Remove Sources 2 and 4 from Component 2.
     # }
 
     # if REMOVE_COMPONENT_SOURCES:
@@ -1918,7 +1919,7 @@ def main(
     #     )
 
     # ========================================================
-    # 4. 剩下的 component sources 再参与自动并合
+    # 4. Run automatic merging on the remaining component sources.
     # ========================================================
     all_final_sources, check_results = auto_merge_all_components(
         component_sources,
@@ -1927,7 +1928,7 @@ def main(
     )
 
     # ========================================================
-    # 5. 打印最终并合后的 source list
+    # 5. Print the final merged source list.
     # ========================================================
     print("\n" + "=" * 60)
     print("FINAL SOURCE LIST AFTER MERGING")
@@ -1961,7 +1962,7 @@ def main(
             )
 
     # ========================================================
-    # 6. 根据最终并合后的 source 生成参数图
+    # 6. Generate parameter maps from the final merged sources.
     # ========================================================
     (
         merged_amplitude,
@@ -1973,7 +1974,7 @@ def main(
     ) = create_final_parameter_maps(all_final_sources, results, shape)
 
     # ========================================================
-    # 7. 保存 mask 和 pixel-level 表格
+    # 7. Save masks and pixel-level tables.
     # ========================================================
     save_source_masks_and_pixel_tables(
         all_sources=all_final_sources,
@@ -1985,7 +1986,7 @@ def main(
     )
 
     # ========================================================
-    # 8. 绘图
+    # 8. Plot figures.
     # ========================================================
     if wcs_2d is not None:
         plot_all_sources_wcs(
@@ -2006,7 +2007,7 @@ def main(
         )
 
     # ========================================================
-    # 9. 保存文字信息和 final DAT
+    # 9. Save text summaries and the final DAT file.
     # ========================================================
     save_source_info(all_final_sources, output_dir)
 

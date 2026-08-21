@@ -136,3 +136,22 @@ so the executable must exist at `./ROHSA/src/ROHSA` relative to the notebook wor
 5. The ROHSA notebook invokes `calculate_hvc_physical_parameters_v2.py`, `source_summary_2x2_auto_aspect_v2.py`, and `pv.py` for the downstream source analysis.
 6. Inspect selected spectra and Gaussian residuals using the final cells of `all-ROHSA.ipynb`.
 
+## Requirements for a Complete Run
+
+This repository is not fully runnable immediately after cloning because the
+survey data and the compiled ROHSA executable are not distributed with the
+source code. Before running the complete workflow, users must:
+
+1. Download the required CRAFTS and HI4PI data from the official repositories
+   listed in the Data Availability section.
+2. Prepare the spatial and velocity cutouts, masks, and intermediate FITS
+   products described above.
+3. Create a Python environment and install all required dependencies.
+4. Compile ROHSA and make its executable available at the location configured
+   in `all-ROHSA.ipynb`.
+5. Review every input and output path in the notebooks and scripts. The example
+   paths in this repository reflect the authors' local data layout and must be
+   changed to match the location and filenames of each user's downloaded data.
+
+The full analysis should be run only after these data, environment, executable,
+and path requirements have been satisfied.
