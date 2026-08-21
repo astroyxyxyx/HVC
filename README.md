@@ -1,6 +1,5 @@
 # HVC
 
-[![DOI](https://zenodo.org/badge/1255853129.svg)](https://doi.org/10.5281/zenodo.22040478)
 Python notebooks and utilities for analyzing high-velocity cloud (HVC) H I emission in the Magellanic Stream using FAST/CRAFTS data, HI4PI comparison products, and ROHSA Gaussian decomposition.
 
 The repository contains two main notebooks. `all.ipynb` performs masking, unit conversion, CRAFTS/HI4PI comparison, moment-map and position-velocity analysis, peak finding, and velocity-gradient measurements. `all-ROHSA.ipynb` performs the ROHSA decomposition and subsequent component filtering, source identification, source merging, physical-parameter calculation, PV analysis, and spectrum inspection.
