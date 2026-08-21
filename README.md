@@ -9,7 +9,7 @@ The repository contains two main notebooks. `all.ipynb` performs masking, unit c
 - `all.ipynb` — applies the SoFiA-derived mask to the CRAFTS cube, converts Jy/beam to K, creates the HI4PI Magellanic-system context map, compares CRAFTS and HI4PI moment products, constructs PV diagnostics, detects spectral peaks, estimates uncertainties, and measures velocity gradients.
 - `all-ROHSA.ipynb` — runs the ROHSA decomposition, converts fitted Gaussian parameters to physical units, filters low-S/N components, identifies component-level sources, merges related sources, launches the physical-parameter and PV scripts, and inspects selected Gaussian fits.
 - `merge_utils_Copy1.py` — source-merging utilities currently imported by `all-ROHSA.ipynb`.
-- `calculate_hvc_physical_parameters_v2.py` — computes integrated H I observables and associated uncertainties for the merged sources.
+- `calculate_hvc_physical_parameters_v2.py` — computes integrated H I observables and associated uncertainties for the merged sources. H I masses are normalized to 120 kpc and reported in units of $10^3(d/120\,\mathrm{kpc})^2M_\odot$.
 - `source_summary_2x2_auto_aspect_v2.py` — generates per-source summary figures.
 - `pv.py` — generates position-velocity diagrams for configured source groups and path orientations.
 

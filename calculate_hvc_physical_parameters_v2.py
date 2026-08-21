@@ -32,11 +32,11 @@ Main adopted formulae
    flux uncertainty per velocity bin in Jy km/s:
        rms_bin = rms(source-integrated spectrum in Jy over noise channels) * dv
 
-6. H I mass at 50 kpc:
-       M_HI = 2.356e5 * (0.050)^2 * F_int  [Msun]
+6. H I mass at 120 kpc:
+       M_HI = 2.356e5 * (0.120)^2 * F_int  [Msun]
 
    The table reports M_HI / 1e3, with the header written as
-       10^3 (d/50 kpc)^2 Msun
+       10^3 (d/120 kpc)^2 Msun
 
 7. Mass uncertainty:
        sigma_MHI = M_HI * err_Fint / F_int
@@ -82,8 +82,8 @@ RMS_V1 = -310.0
 RMS_V2 = -190.0
 NOISE_MODE = "outside"     # allowed values: "outside" or "inside"
 
-# Distance normalization for the table: 10^3 (d/50 kpc)^2 Msun
-D0_KPC = 50.0
+# Distance normalization for the table: 10^3 (d/120 kpc)^2 Msun
+D0_KPC = 120.0
 D0_MPC = D0_KPC / 1000.0
 MASS_COEFF = 2.356e5
 
@@ -538,17 +538,17 @@ def calculate_one_group(
     else:
         flux_err = np.nan
 
-    # H I mass at 50 kpc
+    # H I mass at 120 kpc
     mass_msun = total_flux * MASS_COEFF * D0_MPC**2
-    mass_1e3_d50 = mass_msun / 1e3
+    mass_1e3_d120 = mass_msun / 1e3
 
     # Mass error: sigma_M = M * sigma_F / F
     if total_flux > 0 and np.isfinite(flux_err):
         mass_err_msun = mass_msun * flux_err / total_flux
-        mass_err_1e3_d50 = mass_err_msun / 1e3
+        mass_err_1e3_d120 = mass_err_msun / 1e3
     else:
         mass_err_msun = np.nan
-        mass_err_1e3_d50 = np.nan
+        mass_err_1e3_d120 = np.nan
 
     # Amplitude-weighted mean velocity and FWHM.
     # This keeps the same definition as your previous script.
@@ -629,10 +629,10 @@ def calculate_one_group(
         "total_flux_Jy_kms": total_flux,
         "flux_error_Jy_kms": flux_err,
 
-        "Mass_Msun_D50": mass_msun,
-        "Mass_err_Msun_D50": mass_err_msun,
-        "Mass_1e3_D50": mass_1e3_d50,
-        "Mass_err_1e3_D50": mass_err_1e3_d50,
+        "Mass_Msun_D120": mass_msun,
+        "Mass_err_Msun_D120": mass_err_msun,
+        "Mass_1e3_D120": mass_1e3_d120,
+        "Mass_err_1e3_D120": mass_err_1e3_d120,
 
         "Mean_velocity_kms": mean_velocity,
         "Mean_velocity_err_kms": mean_velocity_err,
@@ -817,11 +817,11 @@ def write_latex_table(summary_df, out_latex):
             values_from_rows(lambda row: _latex_number(row["Footprint_pixels"], 0)),
         ),
         (
-            r"$M_{\rm H\,{\sc i}}$ [$10^{3}(d/50\,{\rm kpc})^2M_\odot$]",
+            r"$M_{\rm H\,{\sc i}}$ [$10^{3}(d/120\,{\rm kpc})^2M_\odot$]",
             values_from_rows(
                 lambda row: _latex_pm(
-                    row["Mass_1e3_D50"],
-                    row["Mass_err_1e3_D50"],
+                    row["Mass_1e3_D120"],
+                    row["Mass_err_1e3_D120"],
                     1,
                 )
             ),
@@ -902,7 +902,7 @@ def write_latex_table(summary_df, out_latex):
         r"multiple component/original-source groups, suffixes a, b, c, etc. identify those rows "
         r"after transposition. The H\,{\sc i} mass is calculated as "
         r"$M_{\rm H\,{\sc i}} = 2.356\times10^{5}D^2F_{\rm int}\,M_\odot$ and is reported in "
-        r"units of $10^3(d/50\,{\rm kpc})^2M_\odot$. The listed H\,{\sc i} column density is "
+        r"units of $10^3(d/120\,{\rm kpc})^2M_\odot$. The listed H\,{\sc i} column density is "
         r"the maximum value within each source/component group. The kinetic temperature is an "
         r"upper limit estimated from $T_K=21.86\,{\rm FWHM}^2$."
     )
@@ -994,7 +994,7 @@ def main():
                 f.write("# Moment0 = Amplitude_K * Sigma_kms * sqrt(2*pi)\n")
                 f.write("# Flux = Moment0 * K_to_Jy / beam_area_pix_per_beam\n")
                 f.write("# Flux error = sqrt(N_RMS_BINS * rms_bin_Jy_kms^2 + (0.10*Flux)^2)\n")
-                f.write("# Mass_Msun_D50 = Flux * 2.356e5 * (0.050)^2\n")
+                f.write("# Mass_Msun_D120 = Flux * 2.356e5 * (0.120)^2\n")
                 f.write("# Mass error = Mass * Flux_error / Flux\n")
                 f.write("# NHI = 1.823e18 * Moment0\n")
                 f.write("# NHI error includes rms-based moment-0 error and 10% systematic error\n")
