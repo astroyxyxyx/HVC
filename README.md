@@ -20,6 +20,7 @@ The repository does not redistribute the full survey products. Obtain the public
 
 - **CRAFTS:** public data are available from the Science Data Bank: https://www.scidb.cn/detail?dataSetId=7fe34782f6ee4284aa22fc68ab8ab6cd . Follow the repository record for the current citation instructions.
 - **HI4PI:** public data are available from the CDS/VizieR archive for J/A+A/594/A116: https://cdsarc.cds.unistra.fr/ftp/J/A+A/594/A116/CUBES/EQ2000/CAR/ .
+- **HI4PI all-sky HVC column-density map (Magellanic coordinates):** https://astro.tobias-westmeier.de/download/data/hi4pi-hvc-nhi-mag-car.fits.gz
 
 ## Required Data Preparation
 
